@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title></title>
+	<style type="text/css">
+	canvas {
+		outline: black 3px solid;
+	}
+	</style>
+</head>
+<body>
+
+<div>
+	px/mm:<input type="number" id="pxmm" value="1" min="0" step="1">
+	grid size (mm):<input type="number" id="gs" value="10" min="0" step="1">
+</div>
+
+<div>
+	w:<input type="number" id="w" value="300" min="0" step="1">
+	h:<input type="number" id="h" value="300" min="0" step="1">
+</div>
+
+<div>
+	a1:<input type="number" id="a1" value="80" min="0" step="1">
+	a2<input type="number" id="a2" value="80" min="0" step="1">
+</div>
+
+<div>
+	x0:<input type="number" id="x0" value="0" min="0" step="1">
+	y0<input type="number" id="y0" value="150" min="0" step="1">
+</div>
+
+<!-- negative:<input type="checkbox" id="negative"> -->
+
+<canvas id="canvas" width="300px" height="300px"></canvas>
+
+<script type="text/javascript">
+	let x
+	let y
+
+	let canvas = document.getElementById("canvas")
+	let ctx = canvas.getContext("2d")
+	
+	let draw = () => {
+		// convert mm to px
+		let pxmm = parseFloat(document.getElementById('pxmm').value)
+
+		canvas.width = Math.round(parseFloat(document.getElementById('w').value)*pxmm)
+		canvas.height = Math.round(parseFloat(document.getElementById('h').value)*pxmm)
+
+		// clear canvas
+		ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+		// set grid
+		let gs = parseFloat(document.getElementById('gs').value)
+		ctx.beginPath()
+		for (let i = 0; i < canvas.width/pxmm; i=i+gs) {
+			ctx.moveTo(i*pxmm, 0)
+			ctx.lineTo(i*pxmm, canvas.height)
+		}
+
+		for (let i = 0; i < canvas.height/pxmm; i=i+gs) {
+			ctx.moveTo(0, i*pxmm)
+			ctx.lineTo(canvas.width, i*pxmm)
+		}
+		ctx.stroke()
+
+		// origin
+		let x0 = parseFloat(document.getElementById("x0").value)
+		let y0 = parseFloat(document.getElementById("y0").value)
+		
+		// segments size
+		let a1 = parseFloat(document.getElementById("a1").value)*pxmm
+		let a2 = parseFloat(document.getElementById("a2").value)*pxmm
+
+		// do the math
+		let q2
+		let q1
+		
+		// if (document.getElementById("negative").checked) {
+		// 	q2 = -Math.acos((x*x+y*y-a1*a1-a2*a2)/(2*a1*a2))
+		// 	q1 = Math.atan2(y,x)+Math.atan((a2*Math.sin(q2))/(a1+a2*Math.cos(q2)))
+		// } else {
+			q2 = Math.acos((x*x+y*y-a1*a1-a2*a2)/(2*a1*a2))
+			q1 = Math.atan2(y,x)-Math.atan((a2*Math.sin(q2))/(a1+a2*Math.cos(q2)))
+		// }
+
+		let p1x = Math.cos(q1)*a1
+		let p1y = Math.sin(q1)*a1
+
+		let p2x = Math.cos(q1+q2)*a2 + p1x
+		let p2y = Math.sin(q1+q2)*a2 + p1y
+
+		// draw arm
+		ctx.beginPath()
+		ctx.moveTo(x0, y0)
+		ctx.lineTo(p1x+x0, p1y+y0)
+		ctx.moveTo(p1x+x0, p1y+y0)
+		ctx.lineTo(p2x+x0, p2y+y0)
+		ctx.stroke()		
+	}
+
+	canvas.addEventListener('mousemove', function(evt) {
+		// origin
+		let x0 = parseFloat(document.getElementById("x0").value)
+		let y0 = parseFloat(document.getElementById("y0").value)
+
+		// get x y from canvas
+		let rect = canvas.getBoundingClientRect()
+		x = evt.clientX - rect.left - x0
+		y = evt.clientY - rect.top - y0
+
+		draw()
+	}, false)
+
+	Array.from(document.getElementsByTagName("input")).forEach(el => {
+		el.addEventListener('change', function(_evt) {
+			draw()
+		})
+	})
+
+</script>
+</body>
+</html>
