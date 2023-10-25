@@ -4,32 +4,89 @@
 	<meta charset="utf-8">
 	<title></title>
 	<style type="text/css">
-	canvas {
-		outline: black 3px solid;
+
+	body {
+		background: black;
+		color: white;
+		font-family: system-ui;
 	}
+
+	canvas {
+		outline: snow 3px solid;
+/*		height: 97vh;*/
+		image-rendering: pixelated;
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+
+	}
+
+	label {
+	}
+	input {
+		display:block;
+		-moz-appearance: none;
+		-webkit-appearance: none;
+		border: 1px solid transparent;
+		box-shadow: none;
+		height: 1em;		
+		padding-top: calc(.75em);
+		padding-bottom: calc(.75em);
+		padding-left: calc(.75em);
+		font-size: 16px;
+		padding: 4px;
+		margin-bottom: 4px;
+
+	}
+
+	input {
+		background-color: #404040;
+		border-radius: 0!important;
+		border: #2b2b2b;
+		color: #b9c8aa;
+	}
+
 	</style>
 </head>
-<body>
 
-<div>
-	px/mm:<input type="number" id="pxmm" value="1" min="0" step="1">
-	grid size (mm):<input type="number" id="gs" value="10" min="0" step="1">
-</div>
+	<label>px/mm</label>
+	<input type="number" id="pxmm" value="1" min="0" step="1">
 
-<div>
-	w:<input type="number" id="w" value="300" min="0" step="1">
-	h:<input type="number" id="h" value="300" min="0" step="1">
-</div>
+	<label>grid size (mm)</label>
+	<input type="number" id="gs" value="20" min="1" step="1">
 
-<div>
-	a1:<input type="number" id="a1" value="80" min="0" step="1">
-	a2<input type="number" id="a2" value="80" min="0" step="1">
-</div>
 
-<div>
-	x0:<input type="number" id="x0" value="0" min="0" step="1">
-	y0<input type="number" id="y0" value="150" min="0" step="1">
-</div>
+	<label>w</label>
+	<input type="number" id="w" value="300" min="0" step="1">
+
+	<label>h</label>
+	<input type="number" id="h" value="300" min="0" step="1">
+
+
+	<label>a1</label>
+	<input type="number" id="a1" value="80" min="0" step="1">
+
+	<label>a2</label>
+	<input type="number" id="a2" value="80" min="0" step="1">
+
+
+	<label>a1w</label>
+	<input type="number" id="a1w" value="15" min="1" step="1">
+
+	<label>a2w</label>
+	<input type="number" id="a2w" value="10" min="1" step="1">
+
+
+	<label>x0</label>
+	<input type="number" id="x0" value="120" min="0" step="1">
+
+	<label>y0</label>
+	<input type="number" id="y0" value="150" min="0" step="1">
+
+	<label>br</label>
+	<input type="number" id="br" value="20" min="0" step="1">
+
 
 <!-- negative:<input type="checkbox" id="negative"> -->
 
@@ -41,20 +98,32 @@
 
 	let canvas = document.getElementById("canvas")
 	let ctx = canvas.getContext("2d")
+
+	let getInput = (id) => {
+		return Math.round(parseFloat(document.getElementById(id).value))
+	}
 	
 	let draw = () => {
 		// convert mm to px
-		let pxmm = parseFloat(document.getElementById('pxmm').value)
+		let pxmm = getInput('pxmm')
 
-		canvas.width = Math.round(parseFloat(document.getElementById('w').value)*pxmm)
-		canvas.height = Math.round(parseFloat(document.getElementById('h').value)*pxmm)
+		canvas.width = getInput('w')*pxmm
+		canvas.height = getInput('h')*pxmm
 
 		// clear canvas
 		ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+		ctx.fillStyle = 'black';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+
 		// set grid
-		let gs = parseFloat(document.getElementById('gs').value)
+		let gs = getInput('gs')
 		ctx.beginPath()
+
+		ctx.lineWidth = 1
+		ctx.strokeStyle = '#ffffff';
+
+
 		for (let i = 0; i < canvas.width/pxmm; i=i+gs) {
 			ctx.moveTo(i*pxmm, 0)
 			ctx.lineTo(i*pxmm, canvas.height)
@@ -67,12 +136,20 @@
 		ctx.stroke()
 
 		// origin
-		let x0 = parseFloat(document.getElementById("x0").value)
-		let y0 = parseFloat(document.getElementById("y0").value)
+		let x0 = getInput('x0')
+		let y0 = getInput('y0')
+
+
+		// draw base
+		ctx.beginPath();
+		ctx.arc(x0, y0, getInput('br'), 0, 2 * Math.PI);
+		ctx.fill();
+		ctx.stroke();
+
 		
 		// segments size
-		let a1 = parseFloat(document.getElementById("a1").value)*pxmm
-		let a2 = parseFloat(document.getElementById("a2").value)*pxmm
+		let a1 = getInput('a1')*pxmm
+		let a2 = getInput('a2')*pxmm
 
 		// do the math
 		let q2
@@ -95,16 +172,28 @@
 		// draw arm
 		ctx.beginPath()
 		ctx.moveTo(x0, y0)
+
+		ctx.lineWidth = getInput('a1w')
+		ctx.strokeStyle = '#ff0000';
+		
 		ctx.lineTo(p1x+x0, p1y+y0)
+		ctx.stroke()
+
+		ctx.beginPath()
+
 		ctx.moveTo(p1x+x0, p1y+y0)
+
+		ctx.lineWidth = getInput('a2w')
+		ctx.strokeStyle = '#00ff00';
+
 		ctx.lineTo(p2x+x0, p2y+y0)
-		ctx.stroke()		
+		ctx.stroke()
 	}
 
 	canvas.addEventListener('mousemove', function(evt) {
 		// origin
-		let x0 = parseFloat(document.getElementById("x0").value)
-		let y0 = parseFloat(document.getElementById("y0").value)
+		let x0 = getInput('x0')
+		let y0 = getInput('y0')
 
 		// get x y from canvas
 		let rect = canvas.getBoundingClientRect()
