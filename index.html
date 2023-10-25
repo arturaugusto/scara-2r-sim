@@ -63,29 +63,39 @@
 	<label>h</label>
 	<input type="number" id="h" value="300" min="0" step="1">
 
+	<label>qty</label>
+	<input type="number" id="qty" value="1" min="1" step="1" max="10">
 
-	<label>a1</label>
-	<input type="number" id="a1" value="80" min="0" step="1">
+	<template>
+		<div style="display: table;outline: auto;">
+			<label>a1</label>
+			<input type="number" id="a1_" value="80" min="0" step="1">
 
-	<label>a2</label>
-	<input type="number" id="a2" value="80" min="0" step="1">
-
-
-	<label>a1w</label>
-	<input type="number" id="a1w" value="15" min="1" step="1">
-
-	<label>a2w</label>
-	<input type="number" id="a2w" value="10" min="1" step="1">
+			<label>a2</label>
+			<input type="number" id="a2_" value="80" min="0" step="1">
 
 
-	<label>x0</label>
-	<input type="number" id="x0" value="120" min="0" step="1">
+			<label>a1w</label>
+			<input type="number" id="a1w_" value="15" min="1" step="1">
 
-	<label>y0</label>
-	<input type="number" id="y0" value="150" min="0" step="1">
+			<label>a2w</label>
+			<input type="number" id="a2w_" value="10" min="1" step="1">
 
-	<label>br</label>
-	<input type="number" id="br" value="20" min="0" step="1">
+
+			<label>x0</label>
+			<input type="number" id="x0_" value="120" min="0" step="1">
+
+			<label>y0</label>
+			<input type="number" id="y0_" value="150" min="0" step="1">
+
+			<label>br</label>
+			<input type="number" id="br_" value="20" min="0" step="1">
+		</div>
+	</template>
+	
+	<div id="arms"></div>
+
+
 
 
 <!-- negative:<input type="checkbox" id="negative"> -->
@@ -93,15 +103,43 @@
 <canvas id="canvas" width="300px" height="300px"></canvas>
 
 <script type="text/javascript">
-	let x
-	let y
-
-	let canvas = document.getElementById("canvas")
-	let ctx = canvas.getContext("2d")
-
 	let getInput = (id) => {
 		return Math.round(parseFloat(document.getElementById(id).value))
 	}
+
+	let inputsArray = (root) => {
+		return Array.from(root.querySelectorAll('*')).filter(el => el.tagName === 'INPUT')
+	}
+
+	getState = () => {
+		let root = document.getElementById('arms')
+		let stateObj = inputsArray(root).reduce((a, c) => {a[c.id] = c.value;return a}, {})
+		return stateObj
+	}
+
+	let addArm = () => {
+		let stateObj = getState()
+		let templ = document.getElementsByTagName("template")[0];
+		document.getElementById('arms').innerHTML = ''
+		for (let i = 0; i < getInput('qty'); i++) {
+			let clon = templ.content.cloneNode(true)
+			inputsArray(clon).forEach(el => el.id += i)
+			document.getElementById('arms').appendChild(clon)
+		}
+		
+		Object.keys(stateObj).forEach(k => {
+			let el = document.getElementById(k)
+			if (el) el.value = stateObj[k]
+		})
+		
+	}
+	addArm()
+	document.getElementById("qty").addEventListener('change', addArm)
+
+	let xy = {}
+
+	let canvas = document.getElementById("canvas")
+	let ctx = canvas.getContext("2d")
 	
 	let draw = () => {
 		// convert mm to px
@@ -135,79 +173,96 @@
 		}
 		ctx.stroke()
 
-		// origin
-		let x0 = getInput('x0')
-		let y0 = getInput('y0')
-
-
-		// draw base
-		ctx.beginPath();
-		ctx.arc(x0, y0, getInput('br'), 0, 2 * Math.PI);
-		ctx.fill();
-		ctx.stroke();
-
 		
-		// segments size
-		let a1 = getInput('a1')*pxmm
-		let a2 = getInput('a2')*pxmm
+		for (let i = 0; i < getInput('qty'); i++) {
+			let x = xy['x_'+i]
+			let y = xy['y_'+i]
 
-		// do the math
-		let q2
-		let q1
-		
-		// if (document.getElementById("negative").checked) {
-		// 	q2 = -Math.acos((x*x+y*y-a1*a1-a2*a2)/(2*a1*a2))
-		// 	q1 = Math.atan2(y,x)+Math.atan((a2*Math.sin(q2))/(a1+a2*Math.cos(q2)))
-		// } else {
-			q2 = Math.acos((x*x+y*y-a1*a1-a2*a2)/(2*a1*a2))
-			q1 = Math.atan2(y,x)-Math.atan((a2*Math.sin(q2))/(a1+a2*Math.cos(q2)))
-		// }
+			// origin
+			let x0 = getInput('x0_'+i)
+			let y0 = getInput('y0_'+i)
 
-		let p1x = Math.cos(q1)*a1
-		let p1y = Math.sin(q1)*a1
 
-		let p2x = Math.cos(q1+q2)*a2 + p1x
-		let p2y = Math.sin(q1+q2)*a2 + p1y
+			// draw base
+			ctx.beginPath();
+			ctx.lineWidth = 1
+			ctx.strokeStyle = '#ffffff';
 
-		// draw arm
-		ctx.beginPath()
-		ctx.moveTo(x0, y0)
+			ctx.arc(x0, y0, getInput('br_'+i), 0, 2 * Math.PI);
+			ctx.fill();
+			ctx.stroke();
 
-		ctx.lineWidth = getInput('a1w')
-		ctx.strokeStyle = '#ff0000';
-		
-		ctx.lineTo(p1x+x0, p1y+y0)
-		ctx.stroke()
+			
+			// segments size
+			let a1 = getInput('a1_'+i)*pxmm
+			let a2 = getInput('a2_'+i)*pxmm
 
-		ctx.beginPath()
+			// do the math
+			let q2
+			let q1
+			
+			// if (document.getElementById("negative").checked) {
+			// 	q2 = -Math.acos((x*x+y*y-a1*a1-a2*a2)/(2*a1*a2))
+			// 	q1 = Math.atan2(y,x)+Math.atan((a2*Math.sin(q2))/(a1+a2*Math.cos(q2)))
+			// } else {
+				q2 = Math.acos((x*x+y*y-a1*a1-a2*a2)/(2*a1*a2))
+				q1 = Math.atan2(y,x)-Math.atan((a2*Math.sin(q2))/(a1+a2*Math.cos(q2)))
+			// }
 
-		ctx.moveTo(p1x+x0, p1y+y0)
+			let p1x = Math.cos(q1)*a1
+			let p1y = Math.sin(q1)*a1
 
-		ctx.lineWidth = getInput('a2w')
-		ctx.strokeStyle = '#00ff00';
+			let p2x = Math.cos(q1+q2)*a2 + p1x
+			let p2y = Math.sin(q1+q2)*a2 + p1y
 
-		ctx.lineTo(p2x+x0, p2y+y0)
-		ctx.stroke()
+			// draw arm
+			ctx.beginPath()
+			ctx.moveTo(x0, y0)
+
+			ctx.lineWidth = getInput('a1w_'+i)
+			ctx.strokeStyle = '#ff0000';
+			
+			ctx.lineTo(p1x+x0, p1y+y0)
+			ctx.stroke()
+
+			ctx.beginPath()
+
+			ctx.moveTo(p1x+x0, p1y+y0)
+
+			ctx.lineWidth = getInput('a2w_'+i)
+			ctx.strokeStyle = '#00ff00';
+
+			ctx.lineTo(p2x+x0, p2y+y0)
+			ctx.stroke()
+			
+		}
+
 	}
 
+	let addEventListeners = () => {
+		Array.from(document.getElementsByTagName("input")).forEach(el => {
+			el.addEventListener('change', draw)
+		})
+	}
+	addEventListeners()
+
 	canvas.addEventListener('mousemove', function(evt) {
-		// origin
-		let x0 = getInput('x0')
-		let y0 = getInput('y0')
+		for (let i = 0; i < getInput('qty'); i++) {
+			// origin
+			let x0 = getInput('x0_'+i)
+			let y0 = getInput('y0_'+i)
 
-		// get x y from canvas
-		let rect = canvas.getBoundingClientRect()
-		x = evt.clientX - rect.left - x0
-		y = evt.clientY - rect.top - y0
+			// get x y from canvas
+			let rect = canvas.getBoundingClientRect()
+			let x = evt.clientX - rect.left - x0
+			let y = evt.clientY - rect.top - y0
+			xy['x_'+i] = x
+			xy['y_'+i] = y
 
+		}
+		
 		draw()
 	}, false)
-
-	Array.from(document.getElementsByTagName("input")).forEach(el => {
-		el.addEventListener('change', function(_evt) {
-			draw()
-		})
-	})
 
 </script>
 </body>
