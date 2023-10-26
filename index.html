@@ -11,33 +11,31 @@
 		font-family: system-ui;
 	}
 
-	canvas {
+	.wrapper {
+		position: fixed;
+	}
+
+	.wrapper canvas {
+		position: fixed;
+		display: block;
 		outline: snow 3px solid;
-/*		height: 97vh;*/
 		image-rendering: pixelated;
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-
 	}
 
-	label {
-	}
+	label {}
 	input {
 		display:block;
-		-moz-appearance: none;
-		-webkit-appearance: none;
+/*		-moz-appearance: none;
+		-webkit-appearance: none;*/
 		border: 1px solid transparent;
 		box-shadow: none;
-		height: 1em;		
+		height: 1em;
 		padding-top: calc(.75em);
 		padding-bottom: calc(.75em);
 		padding-left: calc(.75em);
 		font-size: 16px;
 		padding: 4px;
 		margin-bottom: 4px;
-
 	}
 
 	input {
@@ -46,28 +44,62 @@
 		border: #2b2b2b;
 		color: #b9c8aa;
 	}
+	.row {
+		display: -webkit-box;
+		display: -ms-flexbox;
+		display: flex;
+		-webkit-box-orient: horizontal;
+		-webkit-box-direction: normal;
+				-ms-flex-flow: row wrap;
+						flex-flow: row wrap;
+		-webkit-box-pack: start;
+				-ms-flex-pack: start;
+						justify-content: flex-start;
+		margin-left: calc(var(--grid-gutter) / -2);
+		margin-right: calc(var(--grid-gutter) / -2);
+	}
+	.row.reverse {
+		-webkit-box-orient: horizontal;
+		-webkit-box-direction: reverse;
+				-ms-flex-direction: row-reverse;
+						flex-direction: row-reverse;
+	}
+	.col {
+		-webkit-box-flex: 1;
+				-ms-flex: 1;
+						flex: 1;
+	}
+	.col,
+	[class*=" col-"],
+	[class^="col-"] {
+		margin: 0 calc(var(--grid-gutter) / 2) calc(var(--grid-gutter) / 2);
+	}
+	.col-2 {
+		-webkit-box-flex: 0;
+				-ms-flex: 0 0 calc((100% / (12/2)) - var(--grid-gutter));
+						flex: 0 0 calc((100% / (12/2)) - var(--grid-gutter));
+		max-width: calc((100% / (12/2)) - var(--grid-gutter));
+	}
+	.card {
+		padding: 0.5rem 0.5rem;
+		border-radius: 0px;
+		-webkit-box-shadow: 0 1px 3px white;
+		box-shadow: 0 1px 3px white;
+	}
+	.card p:last-child {
+		margin: 0;
+	}
+	.card header > * {
+		margin-top: 0;
+		margin-bottom: 1rem;
+	}
 
 	</style>
 </head>
-
-	<label>px/mm</label>
-	<input type="number" id="pxmm" value="1" min="0" step="1">
-
-	<label>grid size (mm)</label>
-	<input type="number" id="gs" value="20" min="1" step="1">
-
-
-	<label>w</label>
-	<input type="number" id="w" value="300" min="0" step="1">
-
-	<label>h</label>
-	<input type="number" id="h" value="300" min="0" step="1">
-
-	<label>qty</label>
-	<input type="number" id="qty" value="1" min="1" step="1" max="10">
+<body>
 
 	<template>
-		<div style="display: table;outline: auto;">
+		<div class="col-2 card">
 			<label>a1</label>
 			<input type="number" id="a1_" value="80" min="0" step="1">
 
@@ -88,58 +120,74 @@
 			<label>y0</label>
 			<input type="number" id="y0_" value="150" min="0" step="1">
 
+			<label>alts</label>
+			<input type="checkbox" id="alts_">
+
 			<label>br</label>
 			<input type="number" id="br_" value="20" min="0" step="1">
 		</div>
 	</template>
-	
-	<div id="arms"></div>
+		
+	<div class="row">
+		
+		<div class="col-2 card">
+			<label>px/mm</label>
+			<input type="number" id="pxmm" value="1" min="0" step="1">
+
+			<label>grid size (mm)</label>
+			<input type="number" id="gs" value="20" min="1" step="1">
 
 
+			<label>w</label>
+			<input type="number" id="w" value="300" min="0" step="1">
+
+			<label>h</label>
+			<input type="number" id="h" value="300" min="0" step="1">
+
+			<label>qty</label>
+			<input type="number" id="qty" value="1" min="1" step="1" max="10">
+		</div>
+		
+		<div id="arms" class="row">
+		</div>
+	</div>
 
 
-<!-- negative:<input type="checkbox" id="negative"> -->
-
-<canvas id="canvas" width="300px" height="300px"></canvas>
+	<div class="wrapper">
+		<canvas id="canvas" width="300px" height="300px"></canvas>
+	</div>
 
 <script type="text/javascript">
-	let getInput = (id) => {
-		return Math.round(parseFloat(document.getElementById(id).value))
-	}
 
-	let inputsArray = (root) => {
-		return Array.from(root.querySelectorAll('*')).filter(el => el.tagName === 'INPUT')
-	}
-
-	getState = () => {
-		let root = document.getElementById('arms')
-		let stateObj = inputsArray(root).reduce((a, c) => {a[c.id] = c.value;return a}, {})
-		return stateObj
-	}
-
-	let addArm = () => {
-		let stateObj = getState()
-		let templ = document.getElementsByTagName("template")[0];
-		document.getElementById('arms').innerHTML = ''
-		for (let i = 0; i < getInput('qty'); i++) {
-			let clon = templ.content.cloneNode(true)
-			inputsArray(clon).forEach(el => el.id += i)
-			document.getElementById('arms').appendChild(clon)
-		}
-		
+	let setState = (stateObj) => {
 		Object.keys(stateObj).forEach(k => {
 			let el = document.getElementById(k)
 			if (el) el.value = stateObj[k]
 		})
-		
 	}
-	addArm()
-	document.getElementById("qty").addEventListener('change', addArm)
+
+	let colorPallete = '#FE4A49 #50B2C0 #101920 #2B2D27 #3B2D2A #5F1B32 #242429 #252534 #24254A #1C1E59'.split(' ')
+
+	let getInput = (id) => {
+		return Math.round(parseFloat(document.getElementById(id).value))
+	}
+
+	let getInputsArray = (root) => {
+		return Array.from(root.querySelectorAll('*')).filter(el => el.tagName === 'INPUT')
+	}
+
+	getState = () => {
+		let stateObj = getInputsArray(document).reduce((a, c) => {a[c.id] = c.value;return a}, {})
+		return stateObj
+	}
+
 
 	let xy = {}
 
 	let canvas = document.getElementById("canvas")
 	let ctx = canvas.getContext("2d")
+
+	let stateChangeDebounce
 	
 	let draw = () => {
 		// convert mm to px
@@ -189,25 +237,37 @@
 			ctx.strokeStyle = '#ffffff';
 
 			ctx.arc(x0, y0, getInput('br_'+i), 0, 2 * Math.PI);
-			ctx.fill();
-			ctx.stroke();
-
+			ctx.fillStyle = colorPallete[i];
+			ctx.fill()
+			ctx.stroke()
 			
 			// segments size
 			let a1 = getInput('a1_'+i)*pxmm
 			let a2 = getInput('a2_'+i)*pxmm
 
+
+			// draw arm range
+			ctx.beginPath();
+			ctx.arc(x0, y0, a1+a2, 0, 2 * Math.PI);
+			ctx.lineWidth = 1
+			ctx.strokeStyle = '#00ff0033';
+
+			ctx.arc(x0, y0, a1+a2, 0, 2 * Math.PI);
+			ctx.fillStyle = '#00ff0022';
+			ctx.fill()
+			ctx.stroke()
+
+
 			// do the math
 			let q2
 			let q1
 			
-			// if (document.getElementById("negative").checked) {
-			// 	q2 = -Math.acos((x*x+y*y-a1*a1-a2*a2)/(2*a1*a2))
-			// 	q1 = Math.atan2(y,x)+Math.atan((a2*Math.sin(q2))/(a1+a2*Math.cos(q2)))
-			// } else {
-				q2 = Math.acos((x*x+y*y-a1*a1-a2*a2)/(2*a1*a2))
-				q1 = Math.atan2(y,x)-Math.atan((a2*Math.sin(q2))/(a1+a2*Math.cos(q2)))
-			// }
+			q2 = Math.acos((x*x+y*y-a1*a1-a2*a2)/(2*a1*a2))
+			q1 = Math.atan2(y,x)-Math.atan2((a2*Math.sin(q2)),(a1+a2*Math.cos(q2)))
+
+			// second solution
+			q1 = Math.atan2(y,x)-Math.atan2(-(a2*Math.sin(q2)),(a1+a2*Math.cos(q2)))
+			q2 = -q2
 
 			let p1x = Math.cos(q1)*a1
 			let p1y = Math.sin(q1)*a1
@@ -219,7 +279,7 @@
 			ctx.beginPath()
 			ctx.moveTo(x0, y0)
 
-			ctx.lineWidth = getInput('a1w_'+i)
+			ctx.lineWidth = getInput('a1w_'+i)*pxmm
 			ctx.strokeStyle = '#ff0000';
 			
 			ctx.lineTo(p1x+x0, p1y+y0)
@@ -229,7 +289,7 @@
 
 			ctx.moveTo(p1x+x0, p1y+y0)
 
-			ctx.lineWidth = getInput('a2w_'+i)
+			ctx.lineWidth = getInput('a2w_'+i)*pxmm
 			ctx.strokeStyle = '#00ff00';
 
 			ctx.lineTo(p2x+x0, p2y+y0)
@@ -237,14 +297,21 @@
 			
 		}
 
+		// permalink gen
+		window.clearTimeout(stateChangeDebounce)
+		stateChangeDebounce = window.setTimeout(() => {
+			let stateObj = getState()
+			let stateClone = JSON.parse(JSON.stringify(stateObj))
+			let permalinkText = window.location.origin + window.location.pathname + '#/' + encodeURIComponent(JSON.stringify(stateClone))
+			history.pushState(null, "", permalinkText)
+		}, 500)
 	}
 
 	let addEventListeners = () => {
 		Array.from(document.getElementsByTagName("input")).forEach(el => {
-			el.addEventListener('change', draw)
+			el.addEventListener('change', () => requestAnimationFrame(draw))
 		})
 	}
-	addEventListeners()
 
 	canvas.addEventListener('mousemove', function(evt) {
 		for (let i = 0; i < getInput('qty'); i++) {
@@ -263,6 +330,106 @@
 		
 		draw()
 	}, false)
+
+	let loadStateFromUrl = () => {
+		// load url data
+		let urlState = window.location.href.split('#/')[1]
+		if (urlState) {
+			try {
+				let stateObj = JSON.parse(decodeURIComponent(urlState))
+				setState(stateObj)
+				console.log('loaded url data')
+			} catch (e){
+				history.pushState(null, "", window.location.origin + window.location.pathname)
+			}
+		}
+	}
+	// first load to get general configurations, like arms qty
+	loadStateFromUrl()
+
+	let addArm = () => {
+		let stateObj = getState()
+		let root = document.getElementById('arms')
+		let templ = document.getElementsByTagName("template")[0];
+		document.getElementById('arms').innerHTML = ''
+		for (let i = 0; i < getInput('qty'); i++) {
+			let clon = templ.content.cloneNode(true)
+			getInputsArray(clon).forEach(el => el.id += i)
+			root.appendChild(clon)
+			let last = document.querySelector(".card:last-child")
+			last.style.background = colorPallete[i]
+		}
+		setState(stateObj)
+
+		addEventListeners()
+	}
+	addArm()
+	// with arm qty set, load configs
+	loadStateFromUrl()
+	document.getElementById("qty").addEventListener('change', addArm)
+
+
+	// drag the canvas
+
+	function makeElementDraggable(element) {
+		let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+		element.addEventListener('mousedown', dragMouseDown);
+		element.addEventListener('touchstart', dragMouseDown);
+
+		function dragMouseDown(e) {
+			e = e || window.event;
+			e.preventDefault();
+
+			let rect = element.getBoundingClientRect()
+			let x = e.clientX - rect.left
+			let y = e.clientY - rect.top
+
+
+			
+			if (e.type === 'touchstart') {
+				pos3 = e.touches[0].clientX;
+				pos4 = e.touches[0].clientY;
+				document.addEventListener('touchend', closeDragElement);
+				document.addEventListener('touchmove', elementDrag);
+			} else {
+				pos3 = e.clientX;
+				pos4 = e.clientY;
+				document.addEventListener('mouseup', closeDragElement);
+				document.addEventListener('mousemove', elementDrag);
+			}
+		}
+
+		function elementDrag(e) {
+			e = e || window.event;
+			e.preventDefault();
+			if (e.type === 'touchmove') {
+				pos1 = pos3 - e.touches[0].clientX;
+				pos2 = pos4 - e.touches[0].clientY;
+				pos3 = e.touches[0].clientX;
+				pos4 = e.touches[0].clientY;
+			} else {
+				pos1 = pos3 - e.clientX;
+				pos2 = pos4 - e.clientY;
+				pos3 = e.clientX;
+				pos4 = e.clientY;
+			}
+
+			element.parentElement.style.top = (element.offsetTop - pos2) + "px";
+			element.parentElement.style.left = (element.offsetLeft - pos1) + "px";
+		}
+
+		function closeDragElement() {
+			document.removeEventListener('mouseup', closeDragElement);
+			document.removeEventListener('mousemove', elementDrag);
+			document.removeEventListener('touchend', closeDragElement);
+			document.removeEventListener('touchmove', elementDrag);
+		}
+	}
+
+	makeElementDraggable(canvas)
+
+	draw()
+
 
 </script>
 </body>
