@@ -162,14 +162,17 @@
 	let setState = (stateObj) => {
 		Object.keys(stateObj).forEach(k => {
 			let el = document.getElementById(k)
-			if (el) el.value = stateObj[k]
+			if (el && el.type === 'number') el.value = stateObj[k]
+			if (el && el.type === 'checkbox') el.checked = stateObj[k]
 		})
 	}
 
 	let colorPallete = '#FE4A49 #50B2C0 #101920 #2B2D27 #3B2D2A #5F1B32 #242429 #252534 #24254A #1C1E59'.split(' ')
 
 	let getInput = (id) => {
-		return Math.round(parseFloat(document.getElementById(id).value))
+		let el = document.getElementById(id)
+		if (el.type === 'number') return Math.round(parseFloat(el.value))
+		if (el.type === 'checkbox') return el.checked
 	}
 
 	let getInputsArray = (root) => {
@@ -177,7 +180,11 @@
 	}
 
 	getState = () => {
-		let stateObj = getInputsArray(document).reduce((a, c) => {a[c.id] = c.value;return a}, {})
+		let stateObj = getInputsArray(document).reduce((a, c) => {
+			if (c.type === 'number') a[c.id] = c.value
+			if (c.type === 'checkbox') a[c.id] = c.checked
+			return a
+		}, {})
 		return stateObj
 	}
 
@@ -231,6 +238,24 @@
 			let y0 = getInput('y0_'+i)
 
 
+			
+			// segments size
+			let a1 = getInput('a1_'+i)*pxmm
+			let a2 = getInput('a2_'+i)*pxmm
+
+
+			// draw arm range
+			ctx.beginPath();
+			ctx.lineWidth = 1
+			ctx.strokeStyle = '#00ff0033';
+			
+			ctx.arc(x0, y0, a1+a2, 0, 2 * Math.PI);
+			ctx.stroke()
+			ctx.arc(x0, y0, a1-a2, 0, 2 * Math.PI, true);
+			ctx.fillStyle = '#00ff0022';
+			ctx.fill()
+			ctx.stroke()
+
 			// draw base
 			ctx.beginPath();
 			ctx.lineWidth = 1
@@ -240,23 +265,6 @@
 			ctx.fillStyle = colorPallete[i];
 			ctx.fill()
 			ctx.stroke()
-			
-			// segments size
-			let a1 = getInput('a1_'+i)*pxmm
-			let a2 = getInput('a2_'+i)*pxmm
-
-
-			// draw arm range
-			ctx.beginPath();
-			ctx.arc(x0, y0, a1+a2, 0, 2 * Math.PI);
-			ctx.lineWidth = 1
-			ctx.strokeStyle = '#00ff0033';
-
-			ctx.arc(x0, y0, a1+a2, 0, 2 * Math.PI);
-			ctx.fillStyle = '#00ff0022';
-			ctx.fill()
-			ctx.stroke()
-
 
 			// do the math
 			let q2
@@ -266,8 +274,10 @@
 			q1 = Math.atan2(y,x)-Math.atan2((a2*Math.sin(q2)),(a1+a2*Math.cos(q2)))
 
 			// second solution
-			q1 = Math.atan2(y,x)-Math.atan2(-(a2*Math.sin(q2)),(a1+a2*Math.cos(q2)))
-			q2 = -q2
+			if (getInput('alts_'+i)) {
+				q1 = Math.atan2(y,x)-Math.atan2(-(a2*Math.sin(q2)),(a1+a2*Math.cos(q2)))
+				q2 = -q2
+			}
 
 			let p1x = Math.cos(q1)*a1
 			let p1y = Math.sin(q1)*a1
@@ -337,10 +347,11 @@
 		if (urlState) {
 			try {
 				let stateObj = JSON.parse(decodeURIComponent(urlState))
+				// console.log(stateObj)
 				setState(stateObj)
 				console.log('loaded url data')
 			} catch (e){
-				history.pushState(null, "", window.location.origin + window.location.pathname)
+				//history.pushState(null, "", window.location.origin + window.location.pathname)
 			}
 		}
 	}
