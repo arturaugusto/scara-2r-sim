@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -100,6 +101,7 @@
 
 	<template>
 		<div class="col-2 card">
+			<header id="armid_"></header>
 			<label>a1</label>
 			<input type="number" id="a1_" value="80" min="0" step="1">
 
@@ -146,6 +148,17 @@
 
 			<label>qty</label>
 			<input type="number" id="qty" value="1" min="1" step="1" max="10">
+
+			<label>code gen template</label>:
+			<div>
+				<textarea cols="30" id="logTpl">return o</textarea>
+			</div>
+			
+			<label>output</label>:
+			<div>
+				<textarea cols="30" id="log"></textarea>
+			</div>
+
 		</div>
 		
 		<div id="arms" class="row">
@@ -179,7 +192,7 @@
 		return Array.from(root.querySelectorAll('*')).filter(el => el.tagName === 'INPUT')
 	}
 
-	getState = () => {
+	let getState = () => {
 		let stateObj = getInputsArray(document).reduce((a, c) => {
 			if (c.type === 'number') a[c.id] = c.value
 			if (c.type === 'checkbox') a[c.id] = c.checked
@@ -187,6 +200,12 @@
 		}, {})
 		return stateObj
 	}
+
+	let normalizeAngle = (rad) => {
+		let theta = (rad*180/Math.PI)
+		if (theta < 0) return (360-Math.abs(theta)).toFixed(2)
+		return theta.toFixed(2)
+	}	
 
 
 	let xy = {}
@@ -197,6 +216,8 @@
 	let stateChangeDebounce
 	
 	let draw = () => {
+		Object.keys(anglesState).forEach(k => delete anglesState[k])
+
 		// convert mm to px
 		let pxmm = getInput('pxmm')
 
@@ -279,6 +300,14 @@
 				q2 = -q2
 			}
 
+			let q1n = normalizeAngle(q1)
+			let q2n = normalizeAngle(q2)
+
+			anglesState['arm'+i+'q1'] = parseFloat(q1n)
+			anglesState['arm'+i+'q2'] = parseFloat(q2n)
+
+			document.getElementById('armid_'+i).innerHTML = `arm ${i} q1=${q1n}, q2=${q2n}`
+
 			let p1x = Math.cos(q1)*a1
 			let p1y = Math.sin(q1)*a1
 
@@ -323,6 +352,19 @@
 		})
 	}
 
+	let anglesState = {}
+
+	canvas.addEventListener('mousedown', function(evt) {
+		let arg = {}
+		arg['o'] = anglesState
+		let keys = Object.keys(arg)
+		let f = Function(keys, document.getElementById('logTpl').value)
+		let res = f(...keys.map(k => arg[k]))
+		let outEl = document.getElementById('log')
+		outEl.value = outEl.value + '\n' + JSON.stringify(res)
+		outEl.scroll(0, outEl.scrollHeight)
+	})
+
 	canvas.addEventListener('mousemove', function(evt) {
 		for (let i = 0; i < getInput('qty'); i++) {
 			// origin
@@ -366,6 +408,9 @@
 		for (let i = 0; i < getInput('qty'); i++) {
 			let clon = templ.content.cloneNode(true)
 			getInputsArray(clon).forEach(el => el.id += i)
+
+			clon.getElementById('armid_').id += i
+
 			root.appendChild(clon)
 			let last = document.querySelector(".card:last-child")
 			last.style.background = colorPallete[i]
